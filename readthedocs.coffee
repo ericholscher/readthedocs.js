@@ -1,5 +1,32 @@
+find = (id) ->
+    document.getElementById(id)
+
+_jsonp = []
+window.callback = (json) ->
+    _jsonp.push json
+
+ajax = (url, ready) ->
+    scr = document.createElement 'script'
+    done = no
+    scr.onreadystatechange = scr.onload = () ->
+
+        okay = !@readyState || @readyState == 'loaded' || @readyState == 'complete'
+
+        if not done and okay
+            done = yes
+            scr.onreadystatechange = scr.onload = null
+            setTimeout () ->
+                document.body.removeChild scr
+            ready _jsonp.pop()
+
+    scr.onerror = () ->
+        document.body.removeChild scr
+
+    scr.src = url
+    document.body.appendChild scr
+
 inject_html = (obj) ->
-  html = """
+  """
            <li class="module-item">
               <p class="module-item-title">
                 File:
@@ -11,20 +38,23 @@ inject_html = (obj) ->
            </li>
   """
 
-add_to_element = (id) ->
-  $("#" + id).submit (event)->
-    project_slug = $('#query')[0].value
-    url = "http://readthedocs.org/api/v1/file/search/?q=" + project_slug + "&format=jsonp";
-    $.ajax
-      url: url,
-      dataType: 'jsonp',
-      success: (data)->
-          if data?
-              text = ""
-              for obj in data.objects
-                  text += inject_html(obj)
-                  $("#result").html(text)
-    return false
+add_to_element = (id, query_id, result_id) ->
+    submit = find id
+    q_elem = find query_id
+    result = find result_id
 
-$(document).ready ->
-  add_to_element "rtd_query"
+    on_submit = (ev) ->
+        slug = q_elem.value
+        url = 'http://readthedocs.org/api/v1/file/search/?format=jsonp&q=#{slug}'
+        ajax url, (data) ->
+            text = [inject_html chunk for chunk in data.objects] if data
+            result.innerHTML = text.join ''
+
+        ev and ev.preventDefault
+        no
+
+    submit.onsubmit = on_submit
+
+@RTD = {
+    search_form: add_to_element
+}
