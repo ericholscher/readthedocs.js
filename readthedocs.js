@@ -40,7 +40,7 @@
     on_submit = function(ev) {
       var slug, url;
       slug = q_elem.value;
-      url = 'http://readthedocs.org/api/v1/file/search/?format=jsonp&q=#{slug}';
+      url = 'http://readthedocs.org/api/v1/file/search/?format=jsonp&q=' + slug;
       ajax(url, function(data) {
         var chunk, text;
         if (data) {
